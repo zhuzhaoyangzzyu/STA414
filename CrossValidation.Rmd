@@ -1,0 +1,143 @@
+# Cross Validation written in R
+# Name: Zhu,zhaoyang
+
+# Date: 2019.1.28
+
+
+library(R.matlab)
+library(glmnet)
+library(tidyverse)
+dataset = readMat("dataset.mat")
+
+# split data
+data.train.x = dataset$data.train.X
+data.train.y = dataset$data.train.y[1,]
+data.test.x = dataset$data.test.X
+data.test.y = dataset$data.test.y[1,]
+
+train = list(x = data.train.x, y = data.train.y)
+test = list(x = data.test.x, y = data.test.y)
+
+# shuffle the data
+# assume the input data is a list
+shuffle_data = function(data){
+  randomNum = sample(c(1:10000),1)
+  set.seed(randomNum) 
+  newdata = dataset
+  newdata$x = data$x[sample(nrow(data$x)),]
+  newdata$y = sample(data$y)
+  newdata
+
+}
+
+
+# assume the input data is a list
+split_data = function(dataset,num_folds,fold){
+  n = length(dataset$y)%/%num_folds
+  len = length(dataset$y)
+  if (fold == 1){
+    data_start_x = dataset$x[1:n,]
+    data_start_y = dataset$y[1:n] 
+    data_rest_x = dataset$x[(n+1):len,]
+    data_rest_y = dataset$y[(n+1):len]
+  
+  }
+  else if (fold == num_folds){
+    data_start_x = dataset$x[((num_folds-1)*n + 1):len,]
+    data_start_y = dataset$y[((num_folds-1)*n + 1):len]
+    data_rest_x = dataset$x[1:((num_folds-1)*n),]
+    data_rest_y = dataset$y[1:((num_folds-1)*n)]
+  }
+  else{
+    data_start_x = dataset$x[((fold-1)*n+1):(fold*n),]
+    data_start_y = dataset$y[((fold-1)*n+1):(fold*n)]
+    data_front_x = dataset$x[1:((fold-1)*n),]
+    data_back_x = dataset$x[(fold*n+1):len,]
+    data_front_y = dataset$y[1:((fold-1)*n)]
+    data_back_y = dataset$y[(fold*n+1):len]
+    data_rest_x = rbind(data_front_x,data_back_x)
+    data_rest_y = c(data_front_y,data_back_y)
+  }
+  data_fold = list(x = data_start_x,y = data_start_y)
+  data_rest = list(x = data_rest_x, y = data_rest_y)
+  list(data_fold = data_fold, data_rest = data_rest)
+}
+
+# Assume input data is a list
+train_model = function(dataset,lambd){
+  dim(dataset$y) = c(length(dataset$y),1)
+  beta_MAP = solve(t(dataset$x) %*% dataset$x +  
+                     diag(x=lambd,nrow=ncol(dataset$x),
+                          ncol=ncol(dataset$x))) %*% t(dataset$x) %*% dataset$y
+  beta_MAP
+}
+
+# Assume input data is a list
+prediction = function(data,model){
+  prediction = data$x %*% model
+  prediction
+}
+
+loss = function(data,model){
+  error = sum(t(data$y - prediction(data,model)) %*%
+                (data$y - prediction(data,model)))/ length(data$y)
+  error
+}
+
+
+cv_error = function(data, num_folds, lambd_seq){
+  data = shuffle_data(data)
+  cv_error = c()
+  for (i in 1:length(lambd_seq)){
+    lambd = lambda_seq[i]
+    cv_loss_lmd = 0
+    for (fold in 1: num_folds){
+      cv = split_data(data, num_folds, fold)
+      val_cv = cv$data_fold
+      train_cv = cv$data_rest
+      model = train_model(train_cv,lambd)
+      cv_loss_lmd = cv_loss_lmd + loss(val_cv,model)
+    }
+    cv_error = c(cv_error,cv_loss_lmd / num_folds)
+  }
+  outcome = list(lambdas = lambd_seq, cv_error = cv_error)
+  outcome
+}
+
+# evenly split 50 lambdas
+lambda_seq = seq(from=0.02, to=1.5, length.out=50) 
+model_rid = glmnet(train$x, train$y, alpha = 0,lambda = lambda_seq) 
+# fit Ridge Regression using all the lambdas
+lambdas = model_rid$lambda
+train_pred = predict(model_rid,s = lambdas, newx = train$x)
+# predict using all the lambdas and our model
+train_error = c()
+for (i in 1:length(lambdas)){
+  train_error = c(train_error,mean((train_pred[,i] - data.train.y)^2)) # get error
+}
+test_pred = predict(model_rid, s = lambdas, newx = test$x)
+test_error = c()
+for (i in 1:length(lambdas)){
+  test_error = c(test_error, mean((test_pred[,i] - test$y)^2))
+}
+
+# Try 5,10 fold cross validation 
+(fold_5 = cv_error(train,5,lambda_seq))
+(fold_10 = cv_error(train,10,lambda_seq))
+minimum = min(test_error)
+position = match(minimum,test_error)
+lambdas[position]
+
+# Plot validation errors versus training and test errors
+ggplot() + geom_point(
+  aes(x = lambdas, y = test_error, color = "test_error" )) + 
+  geom_point(aes(x = lambdas, y = train_error,  color = "train_error")) + 
+  geom_point(aes(x = fold_5$lambdas, y = fold_5$cv_error, color = "fold_5_error")) + 
+  geom_point(aes(x = fold_10$lambdas, y = fold_10$cv_error, color = "fold_10_error")) + 
+  ylab("error") + scale_colour_manual(" Curves ",
+                                      values = c("YELLOW","Red","BLUE","BLACK"),breaks = 
+                                        c("test_error",
+                                          "train_error","fold_5_error","fold_10_error")) +
+  geom_vline(xintercept = lambdas[position],linetype = "dotted") + 
+  geom_text(aes(lambdas[position],0,label = lambdas[position]))
+
