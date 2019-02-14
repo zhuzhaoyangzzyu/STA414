@@ -1,0 +1,320 @@
+---
+title: "A1"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Name: Zhu,zhaoyang
+
+# Date: 2019.1.28
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(R.matlab)
+library(glmnet)
+library(tidyverse)
+dataset = readMat("dataset.mat")
+```
+##Q1
+
+#1.1
+
+a).
+
+\(Cov(X,Y) = E(X^TY) - \mu_x\mu_y = E(X^TY) - E(X)E(Y)\)
+
+Since X, Y are independent, \(\implies Cov(X,Y) = E(X^TY) - E(X^TY) = 0\)
+
+b).
+
+Since X, Y are independent
+
+\(E(X + AY) = E(X) + E(AY) = E(X) + AE(Y)\)
+
+\(Var(X + AY) = Var(X) + Var(AY) = Var(X) + AVar(Y)A^T\)
+
+c).
+\(X \sim N(\mu,\Sigma)\)
+
+\(E(AX) = AE(X) = A\mu, Var(AX) = AVar(X)A^T = A\Sigma A^T\)
+
+Therefore, \(AX \sim N(A\mu,A\Sigma A^T)\)
+
+
+#1.2
+
+a).Yes, pdf can take values greater than 1 but the overall intergral of it has to be equal to 1.
+
+b). \(X \sim N(0,\frac{1}{100}) \implies f(X|\mu = 0, \sigma^2 = \frac{1}{100}) = \frac{e^\frac{-x^2}{\frac{1}{50}}}{\sqrt{\pi\frac{1}{50}}} = \frac{e^{-50 * x^2}}{\sqrt{\pi\frac{1}{50}}}\)
+
+c). When X = 0 \(\implies \frac{e^{-50 * 0^2}}{\sqrt{\pi\frac{1}{50}}} = \frac{1}{\sqrt{\pi\frac{1}{50}}}\)
+
+d). 0, because the area under the curve when X is exactly 0 is 0.
+
+#1.3
+
+a). \(f(x, y) = x^Ty, \bigtriangledown_xf(x,y) = y\)
+
+b). \(f(x) = x^Tx, \bigtriangledown_xf(x) = 2x\)
+
+c). \(f(x) = x^TAx, \bigtriangledown_xf(x) = 2Ax\)
+
+d). \(f(x) = Ax, \bigtriangledown_xf(x) = A\)
+
+
+##Q2
+
+#2.1
+
+a). 
+
+\(E(\hat\beta) = E((X^TX)^{-1}X^TY)\), X is given \(\implies (X^TX)^{-1}X^TE(Y) = (X^TX)^{-1}X^TX\beta = \beta\)
+
+\(Var(\hat\beta) = Var((X^TX)^{-1}X^TY)\), X is given \(\implies (X^TX)^{-1}X^TVar(Y)((X^TX)^{-1}X^T)^T = \sigma^2(X^TX)^{-1}\)
+
+b).
+
+\(L(\beta) = \displaystyle\prod^{N}_{i=1} f(y|\beta,x) = \displaystyle\prod^{N}_{i=1} \frac{1}{(2\pi)^{m/2}|\sigma^2 I|^{1/2}}e^{(-\frac{1}{2}(y_i - X\beta)^T(\sigma^{-2}I)(y_i - X\beta))}\)
+
+\(\implies L(\beta) = \frac{1}{(2\pi)^{m/2}|\sigma^2I|^{1/2}}e^{-\frac{1}{2}(y_i -X\beta)^T\sigma^{-2}I(y_i -X\beta)}\)
+
+\(log L(\beta) = l(\beta) = -\frac{1}{2\sigma^2I}\sum(X\beta - Y)^2 - \frac{Nm}{2}ln(\sigma^2) - \frac{Nm}{2}ln(2\pi) \implies \bigtriangledown_\beta l(\beta) = -\frac{1}{\sigma^2I}\sum(X\beta - Y)X^T\)
+
+c).
+\(P(|\hat\beta_i - \beta_i| < \epsilon) = P( -\frac{\epsilon}{\sigma(X^TX)^{-\frac{1}{2}}} \leq \frac{\hat\beta_i - \beta_i}{\sigma(X^TX)^{-\frac{1}{2}}} \leq \frac{\epsilon}{\sigma(X^TX)^{-\frac{1}{2}}}) = P(-\frac{\epsilon}{\sigma(X^TX)^{-\frac{1}{2}}} \leq z \leq \frac{\epsilon}{\sigma(X^TX)^{-\frac{1}{2}}}) = P(z \leq \frac{\epsilon}{\sigma(X^TX)^{-\frac{1}{2}}}) - P(z \leq -\frac{\epsilon}{\sigma(X^TX)^{-\frac{1}{2}}})\implies \Phi(\frac{\epsilon}{\sigma(X^TX)^{-\frac{1}{2}}}) - (1 -\Phi(\frac{\epsilon}{\sigma(X^TX)^{-\frac{1}{2}}})) = 2\Phi(\frac{\epsilon}{\sigma(X^TX)^{-\frac{1}{2}}}) - 1\)
+
+
+#2.2
+
+a).
+\(L(\beta) = \displaystyle\prod^{N}_{i=1} f(y|\beta,x) = \displaystyle\prod^{N}_{i=1} \frac{1}{(2\pi)^{m/2}|\sigma^2 I|^{1/2}}e^{(-\frac{1}{2}(y_i - X\beta)^T(\sigma^{-2}I)(y_i - X\beta))}\)
+
+\(\implies L(\beta) = \frac{1}{(2\pi)^{\frac{mn}{2}}m^{N/2}\sigma^N}e^{-\frac{1}{2}(\sigma^{-2}I)(Y^TY - 2\beta^TX^TY + \beta^TX^TX\beta)}\)
+
+\(\pi(\beta) = \frac{1}{(2\pi)^{m/2}|\tau^2 I|^{1/2}}e^{(-\frac{1}{2}(\beta)^T(\tau^{-2}I)(\beta))}\)
+
+\(\pi(\beta|Y, X) \propto L(\beta)\pi(\beta)\)
+
+We can drop the constants that do not contain \(\beta, \implies \pi(\beta|Y, X) \propto e^{\sigma^{-2}I(Y^TY - 2\beta^TX^TY + \beta^TX^TX\beta) + \tau^{-2}I \beta^T\beta}\)
+
+Then we take the derivitive of \(\pi(\beta|Y,X) \implies \bigtriangledown_\beta \pi(\beta|Y,X) = \beta^T(\sigma^{-2}I X^TX + \tau^{-2}I) = \sigma^{-2}I X^TY = 0\)
+
+\(\implies X^TY = (X^TX + \frac{\sigma^2}{\tau^2}\beta)\)
+
+Let \(\lambda = \frac{\sigma^2}{\tau^2}\)
+
+We have :\(\beta_{MAP} = (X^TX + \lambda I)^{-1}X^TY\)
+
+b).
+$$
+Y^* = 
+\begin{pmatrix}
+y_1 \\
+y_2\\
+.\\
+.\\
+y_m\\
+0\\
+.\\
+.\\
+0\\
+\end{pmatrix}
+,X^*=
+\begin{pmatrix}
+X_{11} & X_{12} & . & . & X_{1m}\\
+. & . & . & . &.\\
+. & . & . & . & .\\
+. & . & . & . & .\\
+X_{n1} & X_{n2} & . & . & X_{nm}\\
+\sqrt{\lambda} & 0 & . & . & 0\\
+0 & \sqrt{\lambda} & . & . & 0\\
+0 & 0 & . & . & \sqrt{\lambda}\\
+\end{pmatrix}
+$$
+
+The new estimator: \(\beta_{MLE} = (X^{*T}X^*)^{-1}X^{*T}Y^*\)
+
+$$
+(X^TX + \lambda^T\lambda)^{-1}(X^{*T})
+\begin{pmatrix}
+y_1 \\
+y_2\\
+.\\
+.\\
+y_m\\
+0\\
+.\\
+.\\
+0\\
+\end{pmatrix}
+$$
+
+\(\implies \beta_{MLE} = (X^TX + \lambda I)^{-1}X^TY\) which is the same the ridge regression estimator.
+
+
+
+
+#2.3 
+
+a). and b).
+
+
+```{r, echo=TRUE, eval=TRUE}
+data.train.x = dataset$data.train.X
+data.train.y = dataset$data.train.y[1,]
+data.test.x = dataset$data.test.X
+data.test.y = dataset$data.test.y[1,]
+
+train = list(x = data.train.x, y = data.train.y)
+test = list(x = data.test.x, y = data.test.y)
+# shuffle_data
+
+# assume the input data is a list
+shuffle_data = function(data){
+  randomNum = sample(c(1:10000),1)
+  set.seed(randomNum) 
+  newdata = dataset
+  newdata$x = data$x[sample(nrow(data$x)),]
+  newdata$y = sample(data$y)
+  newdata
+
+}
+
+
+# assume the input data is a list
+split_data = function(dataset,num_folds,fold){
+  n = length(dataset$y)%/%num_folds
+  len = length(dataset$y)
+  if (fold == 1){
+    data_start_x = dataset$x[1:n,]
+    data_start_y = dataset$y[1:n] 
+    data_rest_x = dataset$x[(n+1):len,]
+    data_rest_y = dataset$y[(n+1):len]
+  
+  }
+  else if (fold == num_folds){
+    data_start_x = dataset$x[((num_folds-1)*n + 1):len,]
+    data_start_y = dataset$y[((num_folds-1)*n + 1):len]
+    data_rest_x = dataset$x[1:((num_folds-1)*n),]
+    data_rest_y = dataset$y[1:((num_folds-1)*n)]
+  }
+  else{
+    data_start_x = dataset$x[((fold-1)*n+1):(fold*n),]
+    data_start_y = dataset$y[((fold-1)*n+1):(fold*n)]
+    data_front_x = dataset$x[1:((fold-1)*n),]
+    data_back_x = dataset$x[(fold*n+1):len,]
+    data_front_y = dataset$y[1:((fold-1)*n)]
+    data_back_y = dataset$y[(fold*n+1):len]
+    data_rest_x = rbind(data_front_x,data_back_x)
+    data_rest_y = c(data_front_y,data_back_y)
+  }
+  data_fold = list(x = data_start_x,y = data_start_y)
+  data_rest = list(x = data_rest_x, y = data_rest_y)
+  list(data_fold = data_fold, data_rest = data_rest)
+}
+
+# Assume input data is a list
+train_model = function(dataset,lambd){
+  dim(dataset$y) = c(length(dataset$y),1)
+  beta_MAP = solve(t(dataset$x) %*% dataset$x +  
+                     diag(x=lambd,nrow=ncol(dataset$x),
+                          ncol=ncol(dataset$x))) %*% t(dataset$x) %*% dataset$y
+  beta_MAP
+}
+
+# Assume input data is a list
+prediction = function(data,model){
+  prediction = data$x %*% model
+  prediction
+}
+
+loss = function(data,model){
+  error = sum(t(data$y - prediction(data,model)) %*%
+                (data$y - prediction(data,model)))/ length(data$y)
+  error
+}
+
+cv_error = function(data, num_folds, lambd_seq){
+  data = shuffle_data(data)
+  cv_error = c()
+  for (i in 1:length(lambd_seq)){
+    lambd = lambda_seq[i]
+    cv_loss_lmd = 0
+    for (fold in 1: num_folds){
+      cv = split_data(data, num_folds, fold)
+      val_cv = cv$data_fold
+      train_cv = cv$data_rest
+      model = train_model(train_cv,lambd)
+      cv_loss_lmd = cv_loss_lmd + loss(val_cv,model)
+    }
+    cv_error = c(cv_error,cv_loss_lmd / num_folds)
+  }
+  outcome = list(lambdas = lambd_seq, cv_error = cv_error)
+  outcome
+}
+
+```
+
+The correct order is 
+
+1. randomly shuffle your data
+
+2. partition your data into fold set and validation set 
+
+3. train your model using fold set to yield estimates for beta
+
+4. use your beta and validation set to yield prediction
+
+5. calculate the loss from your prediction and your validation set's true y
+
+6. repeat 2 to 5 for single value of lambda
+
+7. compute the total loss for that single lambda
+
+8. repeat 1 to 7 for all the lambda
+
+c).
+
+```{r,echo=TRUE, eval=TRUE}
+lambda_seq = seq(from=0.02, to=1.5, length.out=50) # evenly split 50 lambdas
+model_rid = glmnet(train$x, train$y, alpha = 0,lambda = lambda_seq) 
+# fit Ridge Regression using all the lambdas
+lambdas = model_rid$lambda
+train_pred = predict(model_rid,s = lambdas, newx = train$x)
+# predict using all the lambdas and our model
+train_error = c()
+for (i in 1:length(lambdas)){
+  train_error = c(train_error,mean((train_pred[,i] - data.train.y)^2)) # get error
+}
+test_pred = predict(model_rid, s = lambdas, newx = test$x)
+test_error = c()
+for (i in 1:length(lambdas)){
+  test_error = c(test_error, mean((test_pred[,i] - test$y)^2))
+}
+```
+
+d).
+
+```{r,echo=TRUE,eval=TRUE}
+(fold_5 = cv_error(train,5,lambda_seq))
+(fold_10 = cv_error(train,10,lambda_seq))
+minimum = min(test_error)
+position = match(minimum,test_error)
+lambdas[position]
+ggplot() + geom_point(
+  aes(x = lambdas, y = test_error, color = "test_error" )) + 
+  geom_point(aes(x = lambdas, y = train_error,  color = "train_error")) + 
+  geom_point(aes(x = fold_5$lambdas, y = fold_5$cv_error, color = "fold_5_error")) + 
+  geom_point(aes(x = fold_10$lambdas, y = fold_10$cv_error, color = "fold_10_error")) + 
+  ylab("error") + scale_colour_manual(" Curves ",
+                                      values = c("YELLOW","Red","BLUE","BLACK"),breaks = 
+                                        c("test_error",
+                                          "train_error","fold_5_error","fold_10_error")) +
+  geom_vline(xintercept = lambdas[position],linetype = "dotted") + 
+  geom_text(aes(lambdas[position],0,label = lambdas[position]))
+
+
+```
+
+From observing the graph, we can see that at lambda 0.6542857, our test error is at the minimum, where our 10 fold and 5 fold cross validation error trends to have lower error as lambdas approaches to 1.5. However, the error at 1.5 for cross validation is really close to the error at 0.6542857. Therefore, lambda 0.6542857 is the best parameter among 50 lambdas suggested by cross validation.
